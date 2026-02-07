@@ -13,7 +13,7 @@
         <div class="logo"></div>
         <div>
           <h1>Love Platformer</h1>
-          <p class="sub">A colorful, Mario-like couple platformer (original characters)</p>
+          <p class="sub">A colorful, couple platformer (original characters)</p>
         </div>
       </div>
 
@@ -25,28 +25,26 @@
     </header>
 
     <main class="main">
-      <canvas id="game" width="960" height="540" aria-label="Love Platformer game"></canvas>
+      <div class="gameWrap">
+        <canvas id="game" width="960" height="540"></canvas>
+        <div class="hint">Click the game once if keys don’t respond.</div>
+      </div>
 
       <aside class="panel">
         <h2>How to play</h2>
         <ul>
           <li><b>Move:</b> A / D or ← / →</li>
           <li><b>Jump:</b> W / ↑ / Space</li>
-          <li><b>Dash:</b> Shift (short burst)</li>
-          <li><b>Switch character:</b> C (Luna ↔ Rio)</li>
-          <li><b>Goal:</b> Collect <b>hearts</b>, reach the <b>portal</b>, avoid enemies!</li>
+          <li><b>Dash:</b> Shift</li>
+          <li><b>Switch:</b> C (Luna ↔ Rio)</li>
+          <li><b>Goal:</b> Collect <b>5 hearts</b> and touch the portal.</li>
         </ul>
-
-        <div class="note">
-          <b>Couple mode:</b> Press <b>C</b> to swap between Luna and Rio.
-          Each has a slightly different feel (jump + dash timing).
-        </div>
 
         <button id="btnRestart" class="btn">Restart</button>
         <button id="btnMute" class="btn ghost">Music: On</button>
 
         <footer class="foot">
-          <span>Tip:</span> If you want, tell me your two names and I’ll replace “Luna & Rio” everywhere.
+          <span>Note:</span> This uses original art (not Nintendo assets).
         </footer>
       </aside>
     </main>

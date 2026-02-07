@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Love Platformer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Love Platformer</h1>
+          <p class="sub">A colorful, Mario-like couple platformer (original characters)</p>
+        </div>
+      </div>
+
+      <div class="hud">
+        <div class="pill"><span>❤</span> <b id="hearts">0</b></div>
+        <div class="pill"><span>✦</span> <b id="stars">0</b></div>
+        <div class="pill"><span>⏱</span> <b id="time">0:00</b></div>
+      </div>
+    </header>
+
+    <main class="main">
+      <canvas id="game" width="960" height="540" aria-label="Love Platformer game"></canvas>
+
+      <aside class="panel">
+        <h2>How to play</h2>
+        <ul>
+          <li><b>Move:</b> A / D or ← / →</li>
+          <li><b>Jump:</b> W / ↑ / Space</li>
+          <li><b>Dash:</b> Shift (short burst)</li>
+          <li><b>Switch character:</b> C (Luna ↔ Rio)</li>
+          <li><b>Goal:</b> Collect <b>hearts</b>, reach the <b>portal</b>, avoid enemies!</li>
+        </ul>
+
+        <div class="note">
+          <b>Couple mode:</b> Press <b>C</b> to swap between Luna and Rio.
+          Each has a slightly different feel (jump + dash timing).
+        </div>
+
+        <button id="btnRestart" class="btn">Restart</button>
+        <button id="btnMute" class="btn ghost">Music: On</button>
+
+        <footer class="foot">
+          <span>Tip:</span> If you want, tell me your two names and I’ll replace “Luna & Rio” everywhere.
+        </footer>
+      </aside>
+    </main>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

@@ -71,12 +71,11 @@
   btnMute.addEventListener("click", () => {
     musicOn = !musicOn;
     btnMute.textContent = `Music: ${musicOn ? "On" : "Off"}`;
-    if (audioCtx && !musicOn) { /* let it be */ }
   });
 
   // ---------- Game constants ----------
   const W = canvas.width, H = canvas.height;
-  const TILE = 30; // 32-ish vibe, but fits 960x540 nicely: 32 tiles across = 960/30 = 32
+  const TILE = 30;
   const GRAV = 2200;
   const FRICTION = 0.86;
 
@@ -84,12 +83,10 @@
   const cam = { x: 0, y: 0 };
 
   // ---------- Level (tilemap) ----------
-  // 0 empty, 1 solid, 2 bouncy, 3 deadly spikes (top), 4 portal base
+  // 0 empty, 1 solid, 3 deadly spikes, 4 portal base
   const levelCols = 64;
   const levelRows = 18;
 
-  // Build a colorful “mosaic” level with platforms.
-  // Keep it readable: create from strings.
   const mapStr = [
     "................................................................",
     "................................................................",
@@ -110,14 +107,6 @@
     "..111............111...........111....................h.........",
     "1111111111111111111111111111111111111111111111111111111111111111",
   ];
-  // Legend in mapStr:
-  // '.' empty
-  // '1' solid
-  // 's' spikes
-  // 'h' heart collectible
-  // 'e' enemy
-  // 'P' portal top marker
-  // '4' portal base tile
 
   const tiles = new Array(levelRows).fill(0).map(()=> new Array(levelCols).fill(0));
   const hearts = [];
@@ -132,8 +121,7 @@
       if (ch === "s") tiles[r][c] = 3;
       if (ch === "4") { tiles[r][c] = 4; portal.x = x; portal.y = y - TILE; portal.w = TILE; portal.h = TILE*2; }
       if (ch === "h") hearts.push({ x: x+TILE*0.2, y: y+TILE*0.2, w: TILE*0.6, h: TILE*0.6, taken:false, bob: Math.random()*10 });
-      if (ch === "e") enemies.push({ x: x+TILE*0.1, y: y+TILE*0.15, w: TILE*0.8, h: TILE*0.7, vx: (Math.random() > 0.5 ? 1 : -1)*120, dir:1, alive:true });
-      if (ch === "P") { /* portal top marker only */ }
+      if (ch === "e") enemies.push({ x: x+TILE*0.1, y: y+TILE*0.15, w: TILE*0.8, h: TILE*0.7, vx: (Math.random() > 0.5 ? 1 : -1)*120, alive:true });
     }
   }
 
@@ -142,24 +130,8 @@
 
   // ---------- Player ----------
   const players = [
-    {
-      name: "Luna",
-      // Slightly higher jump, softer dash
-      colorA: "#ff5ac8",
-      colorB: "#ffd1ef",
-      jumpVel: 780,
-      dashSpeed: 520,
-      dashTime: 0.14,
-    },
-    {
-      name: "Rio",
-      // Slightly heavier, stronger dash
-      colorA: "#5affd2",
-      colorB: "#d2fff1",
-      jumpVel: 740,
-      dashSpeed: 640,
-      dashTime: 0.12,
-    }
+    { name: "Luna", colorA: "#ff5ac8", colorB: "#ffd1ef", jumpVel: 780, dashSpeed: 520, dashTime: 0.14 },
+    { name: "Rio",  colorA: "#5affd2", colorB: "#d2fff1", jumpVel: 740, dashSpeed: 640, dashTime: 0.12 }
   ];
 
   const state = {
@@ -217,16 +189,13 @@
   }
 
   function resolveAxis(axis){
-    // axis: "x" or "y"
-    const px = state.x, py = state.y;
     const pw = state.w, ph = state.h;
 
-    const left = Math.floor(px / TILE);
-    const right = Math.floor((px+pw) / TILE);
-    const top = Math.floor(py / TILE);
-    const bottom = Math.floor((py+ph) / TILE);
+    const left = Math.floor(state.x / TILE);
+    const right = Math.floor((state.x+pw) / TILE);
+    const top = Math.floor(state.y / TILE);
+    const bottom = Math.floor((state.y+ph) / TILE);
 
-    // iterate nearby tiles only
     for (let r = top-1; r <= bottom+1; r++){
       for (let c = left-1; c <= right+1; c++){
         if (r < 0 || c < 0 || r >= levelRows || c >= levelCols) continue;
@@ -261,7 +230,6 @@
   }
 
   function checkHazards(){
-    // spikes are deadly if feet touch them
     const footY = state.y + state.h;
     const leftX = state.x + 3;
     const rightX = state.x + state.w - 3;
@@ -269,23 +237,17 @@
     const t1 = tileAt(leftX, footY);
     const t2 = tileAt(rightX, footY);
 
-    if ((t1 === 3 || t2 === 3) && state.invuln <= 0){
-      hurt();
-    }
+    if ((t1 === 3 || t2 === 3) && state.invuln <= 0) hurt();
   }
 
   function hurt(){
     playHurt();
-    // bounce back and lose a star if any, else restart near spawn
     state.invuln = 0.9;
     state.vy = -520;
     state.vx = -state.dashDir * 220;
     state.stars = Math.max(0, state.stars - 1);
-    if (state.stars === 0 && state.hearts > 0){
-      state.hearts = Math.max(0, state.hearts - 1);
-    }
+    if (state.stars === 0 && state.hearts > 0) state.hearts = Math.max(0, state.hearts - 1);
     if (state.hearts === 0 && state.stars === 0){
-      // soft reset position, keep time
       state.x = TILE*2;
       state.y = TILE*9;
       state.vx = 0;
@@ -297,8 +259,6 @@
   let last = performance.now();
 
   function update(dt){
-    pressed.clear();
-
     if (!state.win){
       state.timeSec = (performance.now() - state.t0) / 1000;
     }
@@ -308,12 +268,10 @@
     // switch character
     if (tap("c")){
       state.active = (state.active + 1) % players.length;
-      // tiny sparkle reward for being cute
       state.stars++;
       playCollect();
     }
 
-    // Movement
     const move = (down("a","arrowleft") ? -1 : 0) + (down("d","arrowright") ? 1 : 0);
     if (move !== 0) state.dashDir = move;
 
@@ -326,7 +284,6 @@
     // Dash
     if (tap("shift") && state.dash <= 0 && !state.win){
       state.dash = A.dashTime;
-      // dash cancels vertical velocity a bit
       state.vy = Math.min(state.vy, 60);
       beep(520, 0.05, "square", 0.03);
     }
@@ -338,7 +295,6 @@
         state.dash -= dt;
         state.vx = A.dashSpeed * state.dashDir;
       } else {
-        // normal accel
         const target = move * 300;
         state.vx = lerp(state.vx, target, 0.14);
         state.vx *= (state.onGround ? FRICTION : 0.98);
@@ -348,8 +304,11 @@
       state.vy += GRAV * dt;
       state.vy = Math.min(state.vy, 1400);
 
-      // jump if buffered and coyote/ground
-      if (state.jumpBuffer > 0 && (state.coyote > 0 || tileAt(state.x+state.w/2, state.y+state.h+2) === 1 || tileAt(state.x+state.w/2, state.y+state.h+2) === 4)){
+      // jump if buffered and grounded/coyote
+      if (state.jumpBuffer > 0 && (state.coyote > 0 ||
+        tileAt(state.x+state.w/2, state.y+state.h+2) === 1 ||
+        tileAt(state.x+state.w/2, state.y+state.h+2) === 4))
+      {
         state.jumpBuffer = 0;
         state.vy = -A.jumpVel;
         state.dash = 0;
@@ -385,24 +344,20 @@
     for (const e of enemies){
       if (!e.alive) continue;
 
-      // patrol + collision with tiles
       e.x += e.vx * dt;
       const aheadX = e.vx > 0 ? e.x + e.w + 2 : e.x - 2;
       const footY = e.y + e.h + 2;
       const tAhead = tileAt(aheadX, e.y + e.h * 0.6);
       const tFoot  = tileAt(aheadX, footY);
 
-      // turn on wall or missing floor
       if (tAhead === 1 || tAhead === 4 || (tFoot !== 1 && tFoot !== 4)){
         e.vx *= -1;
       }
 
-      // player collision
       if (!state.win && state.invuln <= 0){
         const a = { x: state.x, y: state.y, w: state.w, h: state.h };
         const b = { x: e.x, y: e.y, w: e.w, h: e.h };
         if (rects(a,b)){
-          // stomp?
           const playerBottom = state.y + state.h;
           if (state.vy > 0 && playerBottom - e.y < 16){
             e.alive = false;
@@ -418,7 +373,7 @@
 
     checkHazards();
 
-    // Win condition: touch portal and collect at least 5 hearts
+    // Win: touch portal AND collect at least 5 hearts
     if (!state.win){
       const a = { x: state.x, y: state.y, w: state.w, h: state.h };
       const b = { x: portal.x, y: portal.y, w: portal.w, h: portal.h };
@@ -446,7 +401,6 @@
 
   // ---------- Rendering ----------
   function mosaicBG(){
-    // Colorful mosaic squares behind everything (parallax)
     const size = 24;
     const offsetX = -cam.x * 0.25;
     const offsetY = -cam.y * 0.18;
@@ -457,7 +411,6 @@
         const ny = y + offsetY;
         const v = (Math.sin((nx+ny)*0.01) + Math.sin(nx*0.013) + Math.cos(ny*0.016))*0.5;
         const a = 0.12 + 0.08*Math.abs(v);
-        // “mosaic” pastel colors without hardcoding a theme
         ctx.fillStyle = `rgba(${Math.floor(150+90*Math.sin(nx*0.02))},${Math.floor(140+100*Math.sin(ny*0.018+1))},${Math.floor(170+80*Math.cos((nx+ny)*0.017))},${a})`;
         ctx.fillRect(x, y, size-1, size-1);
       }
@@ -465,9 +418,8 @@
   }
 
   function drawTile(x,y,t){
+    const gx = x - cam.x, gy = y - cam.y;
     if (t === 1){
-      // colorful brick tile
-      const gx = x - cam.x, gy = y - cam.y;
       const hue = (x*0.03 + y*0.02) % 360;
       ctx.fillStyle = `hsl(${hue}, 85%, 55%)`;
       ctx.fillRect(gx, gy, TILE, TILE);
@@ -476,8 +428,6 @@
       ctx.fillStyle = "rgba(0,0,0,0.12)";
       ctx.fillRect(gx+4, gy+TILE-7, TILE-8, 4);
     } else if (t === 3){
-      // spikes
-      const gx = x - cam.x, gy = y - cam.y;
       ctx.fillStyle = "rgba(255,70,110,0.95)";
       for (let i=0; i<5; i++){
         const sx = gx + i*(TILE/5);
@@ -489,8 +439,6 @@
         ctx.fill();
       }
     } else if (t === 4){
-      // portal base tile
-      const gx = x - cam.x, gy = y - cam.y;
       ctx.fillStyle = "rgba(120,160,255,0.85)";
       ctx.fillRect(gx, gy, TILE, TILE);
       ctx.fillStyle = "rgba(0,0,0,0.18)";
@@ -503,8 +451,7 @@
     const bob = Math.sin((performance.now()*0.004) + h.bob) * 4;
     ctx.save();
     ctx.translate(gx + h.w/2, gy + h.h/2 + bob);
-    ctx.scale(1.0, 1.0);
-    // pixel heart
+
     const p = 3;
     const shape = [
       "01100110",
@@ -531,7 +478,6 @@
 
   function drawPortal(){
     const gx = portal.x - cam.x, gy = portal.y - cam.y;
-    // glowing frame
     ctx.save();
     const pulse = 0.45 + 0.25*Math.sin(performance.now()*0.004);
     ctx.fillStyle = `rgba(140,80,255,${0.25 + pulse*0.15})`;
@@ -540,7 +486,6 @@
     ctx.fillStyle = "rgba(30,10,60,0.55)";
     ctx.fillRect(gx, gy, portal.w, portal.h);
 
-    // inner swirl
     const grad = ctx.createLinearGradient(gx, gy, gx, gy+portal.h);
     grad.addColorStop(0, "rgba(255,90,200,0.7)");
     grad.addColorStop(0.5, "rgba(90,255,210,0.65)");
@@ -548,17 +493,14 @@
     ctx.fillStyle = grad;
     ctx.fillRect(gx+4, gy+4, portal.w-8, portal.h-8);
 
-    // requirement label
     ctx.fillStyle = "rgba(255,255,255,0.9)";
     ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
     ctx.fillText("Need 5 ❤", gx-6, gy-14);
-
     ctx.restore();
   }
 
   function drawEnemy(e){
     const gx = e.x - cam.x, gy = e.y - cam.y;
-    // cute blob enemy
     ctx.save();
     ctx.translate(gx + e.w/2, gy + e.h/2);
     const wob = 1 + 0.06*Math.sin(performance.now()*0.01 + gx*0.01);
@@ -567,12 +509,9 @@
     ctx.beginPath();
     ctx.roundRect(-e.w/2, -e.h/2, e.w, e.h, 10);
     ctx.fill();
-
-    // eyes
     ctx.fillStyle = "rgba(20,20,30,0.85)";
     ctx.fillRect(-6, -2, 3, 4);
     ctx.fillRect( 3, -2, 3, 4);
-
     ctx.restore();
   }
 
@@ -587,7 +526,6 @@
     ctx.save();
     ctx.globalAlpha = inv;
 
-    // body
     const grad = ctx.createLinearGradient(gx, gy, gx, gy+state.h);
     grad.addColorStop(0, A.colorB);
     grad.addColorStop(1, A.colorA);
@@ -596,17 +534,13 @@
     ctx.roundRect(gx, gy, state.w, state.h, 8);
     ctx.fill();
 
-    // face
     ctx.fillStyle = "rgba(20,20,30,0.75)";
-    // eyes
     ctx.fillRect(gx + (state.dashDir>0? 13:7), gy+10, 3, blink?1:3);
     ctx.fillRect(gx + (state.dashDir>0? 17:11), gy+10, 3, blink?1:3);
 
-    // little scarf / hair band
     ctx.fillStyle = "rgba(255,255,255,0.22)";
     ctx.fillRect(gx+3, gy+4, state.w-6, 3);
 
-    // name tag bubble
     ctx.globalAlpha = 0.95;
     ctx.fillStyle = "rgba(0,0,0,0.25)";
     ctx.beginPath();
@@ -619,7 +553,6 @@
     ctx.restore();
   }
 
-  // Polyfill for roundRect (Safari older)
   if (!CanvasRenderingContext2D.prototype.roundRect) {
     CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
       r = Math.min(r, w/2, h/2);
@@ -636,20 +569,16 @@
 
   function draw(){
     ctx.clearRect(0,0,W,H);
-
-    // background
     ctx.fillStyle = "rgba(0,0,0,0.14)";
     ctx.fillRect(0,0,W,H);
     mosaicBG();
 
-    // subtle horizon glow
     const hg = ctx.createRadialGradient(W*0.5, H*0.1, 40, W*0.5, H*0.1, 520);
     hg.addColorStop(0, "rgba(255,255,255,0.10)");
     hg.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = hg;
     ctx.fillRect(0,0,W,H);
 
-    // tiles
     const c0 = Math.floor(cam.x / TILE);
     const c1 = Math.ceil((cam.x + W) / TILE);
     const r0 = Math.floor(cam.y / TILE);
@@ -663,23 +592,18 @@
       }
     }
 
-    // collectibles
     for (const h of hearts){
       if (!h.taken) drawHeart(h);
     }
 
-    // portal
     drawPortal();
 
-    // enemies
     for (const e of enemies){
       if (e.alive) drawEnemy(e);
     }
 
-    // player
     drawPlayer();
 
-    // win overlay
     if (state.win){
       ctx.save();
       ctx.fillStyle = "rgba(0,0,0,0.42)";
@@ -702,15 +626,13 @@
     const dt = Math.min(0.033, (now - last)/1000);
     last = now;
 
-    // Run update before draw
     update(dt);
+    pressed.clear(); // ✅ FIX: clear AFTER update so tap() works
     draw();
 
-    // simple ambient music ticks (very light)
     musicTimer += dt;
     if (musicOn && musicTimer > 0.65 && !state.win){
       musicTimer = 0;
-      // gentle arpeggio
       const base = 262; // C4
       const seq = [0, 7, 12, 16];
       const n = seq[Math.floor((performance.now()/650) % seq.length)];
@@ -720,8 +642,9 @@
     requestAnimationFrame(loop);
   }
 
-  // Start requires user interaction for audio on many browsers
-  window.addEventListener("pointerdown", () => { if (audioCtx && audioCtx.state === "suspended") audioCtx.resume(); }, { once:false });
+  window.addEventListener("pointerdown", () => {
+    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+  }, { once:false });
 
   reset();
   requestAnimationFrame(loop);
